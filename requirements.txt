@@ -1,0 +1,7 @@
+
+aiogram
+httpx
+motor
+pymongo
+python-dotenv
+loguru
