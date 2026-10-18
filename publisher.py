@@ -187,6 +187,7 @@ class Publisher:
         if await self.is_published(article.dedup_id):
             return False
 
+        async with self._lock:
             try:
                 if article.style == "brief":
                     await self._bot.send_message(
@@ -203,7 +204,8 @@ class Publisher:
             except TelegramBadRequest as exc:
                 if "failed to get HTTP URL content" in str(exc):
                     logger.warning(
-                        "Rich message failed for {} (bad image/link), falling back to text: {}",
+                        "Rich message failed for {} (bad image/link), "
+                        "falling back to text: {}",
                         article.dedup_id,
                         exc,
                     )
@@ -213,8 +215,6 @@ class Publisher:
                     )
                 else:
                     raise
-            except Exception:
-                raise
             await asyncio.sleep(self._send_delay)
 
         await self.mark_published(article.dedup_id)
