@@ -5,3 +5,6 @@ motor
 pymongo
 python-dotenv
 loguru
+feedparser
+beautifulsoup4
+trafilatura
