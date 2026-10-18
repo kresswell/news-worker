@@ -4,8 +4,10 @@ import asyncio
 import html
 import random
 import re
+from datetime import datetime, timezone
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
     InputMediaPhoto,
     InputRichBlockButtons,
@@ -28,8 +30,6 @@ LINK_PATTERN = re.compile(
     r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
     re.IGNORECASE | re.DOTALL,
 )
-
-from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 
 SHARE_URL = "https://t.me/yanayojiri"
 
@@ -178,7 +178,12 @@ class Publisher:
 
     async def mark_published(self, dedup_id: str) -> None:
         try:
-            await self._collection.insert_one({"_id": dedup_id})
+            await self._collection.insert_one(
+                {
+                    "_id": dedup_id,
+                    "published_at": datetime.now(timezone.utc),
+                }
+            )
         except DuplicateKeyError:
             logger.debug("Already recorded: {}", dedup_id)
 
