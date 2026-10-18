@@ -29,7 +29,25 @@ LINK_PATTERN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
-SHARE_URL = "https://t.me/TheKenyanTimes"
+from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
+
+SHARE_URL = "https://t.me/yanayojiri"
+
+
+def build_fallback_text(article: Article) -> str:
+    lines: list[str] = []
+    if article.headline:
+        lines.append(f"<b>{html.escape(article.headline)}</b>")
+    for p in article.paragraphs[:3]:
+        text = re.sub(r"<[^>]*>", "", p)
+        text = html.unescape(text).strip()
+        if text:
+            lines.append(text)
+    if article.url:
+        lines.append(f'\n<a href="{article.url}">Read full story</a>')
+    lines.append(f"\n<small>Via {html.escape(article.credit)}</small>")
+    return "\n\n".join(lines)
+
 
 
 def build_paragraph_parts(paragraph: str) -> list:
@@ -169,19 +187,34 @@ class Publisher:
         if await self.is_published(article.dedup_id):
             return False
 
-        async with self._lock:
-            if article.style == "brief":
-                await self._bot.send_message(
-                    chat_id=self._chat_id,
-                    text=article.brief_html,
-                )
-            else:
-                await self._bot.send_rich_message(
-                    chat_id=self._chat_id,
-                    rich_message=InputRichMessage(
-                        blocks=render_rich_blocks(article)
-                    ),
-                )
+            try:
+                if article.style == "brief":
+                    await self._bot.send_message(
+                        chat_id=self._chat_id,
+                        text=article.brief_html,
+                    )
+                else:
+                    await self._bot.send_rich_message(
+                        chat_id=self._chat_id,
+                        rich_message=InputRichMessage(
+                            blocks=render_rich_blocks(article)
+                        ),
+                    )
+            except TelegramBadRequest as exc:
+                if "failed to get HTTP URL content" in str(exc):
+                    logger.warning(
+                        "Rich message failed for {} (bad image/link), falling back to text: {}",
+                        article.dedup_id,
+                        exc,
+                    )
+                    await self._bot.send_message(
+                        chat_id=self._chat_id,
+                        text=build_fallback_text(article),
+                    )
+                else:
+                    raise
+            except Exception:
+                raise
             await asyncio.sleep(self._send_delay)
 
         await self.mark_published(article.dedup_id)
