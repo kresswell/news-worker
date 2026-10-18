@@ -31,7 +31,7 @@ LINK_PATTERN = re.compile(
 
 from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 
-SHARE_URL = "https://t.me/yanayojiri"
+SHARE_URL = "https://t.me/TheKenyanTimes"
 
 
 def build_fallback_text(article: Article) -> str:
