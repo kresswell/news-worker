@@ -31,7 +31,7 @@ LINK_PATTERN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
-SHARE_URL = "https://t.me/yanayojiri"
+SHARE_URL = "https://t.me/KenyanTimes"
 
 
 def build_fallback_text(article: Article) -> str:
